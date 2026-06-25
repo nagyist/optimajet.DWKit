@@ -1,0 +1,586 @@
+<h3>{{ labels.ServiceTask }}</h3>
+<el-form ref="form"
+         :model="FormData"
+         class="WorkflowDesignerWindowForm"
+         label-position="top"
+         label-width="150px">
+  <div class="SettingsWithPadding">
+    <el-form-item :label="labels.Name" :rules="activityNameRules()" class="el-form-item" prop="Name" style="flex-grow: 1;">
+      <el-input v-model="FormData.Name" :placeholder="labels.Name" :readonly="readonly"></el-input>
+    </el-form-item>
+    <el-form-item size="small">
+      <el-checkbox v-if="expertMode" v-model="disableAllPersist" :disabled="readonly" :indeterminate="isIndeterminate"
+                   :label="labels.DisablePersist" @change="handleCheckAllPersistsChange"></el-checkbox>
+    </el-form-item>
+    <el-checkbox-group v-if="expertMode && (disableAllPersist || isIndeterminate)" v-model="checkedPersists"
+                       @change="handleCheckedPersistsChange">
+      <el-checkbox v-for="persist in persists" :key="persist" :disabled="readonly" :label="persist" :value="persist">{{ persist }}</el-checkbox>
+    </el-checkbox-group>
+  </div>
+  <div style="margin-bottom: 10px;">
+    <h4 class="WorkflowDesignerTitleWithCreate Underline">
+      {{ labels.Implementation }}
+      <a v-if="!readonly" @click="addActionRow(FormData.Implementation)">{{ ButtonTextCreate }}</a>
+    </h4>
+    <table v-if="FormData?.Implementation?.length > 0" class="WorkflowDesignerTable">
+      <tr>
+        <th></th>
+        <th>{{ labels.ImpAction }}</th>
+        <th>{{ labels.ImpActionParameter }}</th>
+      </tr>
+      <tr v-for="(imp, index) in FormData.Implementation" :key="index"
+          :class="dragOverIndex == index && dragOverBlock  == imp ? 'dragOver' : ''"
+          @dragend="dragend($event)"
+          @dragover="dragover(imp, index, $event)"
+          @dragstart="dragstart(index, $event, FormData.Implementation)">
+
+        <td :draggable="!readonly" class='WorkflowDesignerTableMoveCol'>
+          <div v-if="!readonly" class='WorkflowDesignerTableMoveButton'></div>
+        </td>
+        <td>
+          <el-select
+            v-model="imp.ActionName"
+            :class="validateField(notEmpty, imp.ActionName) ? 'WorkflowDesignerInputError' : ''"
+            :disabled="readonly"
+            :placeholder="labels.ImpAction"
+            :title="validateField(notEmpty, imp.ActionName)"
+            clearable
+            filterable
+            style="width: 100%;">
+            <el-option v-for="item in actions" :key="item" :label="item" :value="item"></el-option>
+          </el-select>
+        </td>
+        <td>
+          <el-autocomplete v-model="imp.ActionParameter" :fetch-suggestions="querySearch" :placeholder="labels.ImpActionParameter"
+                           :readonly="readonly"
+                           clearable style="width: 100%;" @focus="setCurrentItem(imp)"></el-autocomplete>
+        </td>
+        <td v-if="!readonly" class="WorkflowDesignerTableEditButtons Double">
+          <el-button-group>
+            <el-button :class="'WorkflowDesignerTableCodeActionsButton ' + (editItem == imp ? 'is-active' : '')"
+                       @click="showjson('ActionParameter', imp)"></el-button>
+            <el-button class="WorkflowDesignerTableDeleteButton" @click="removeRow(FormData.Implementation, index)"></el-button>
+          </el-button-group>
+        </td>
+      </tr>
+    </table>
+  </div>
+  <div v-if="expertMode" style="margin-bottom: 10px;">
+    <h4 style="padding-bottom: 1px;border-bottom: 1px solid rgba(34,36,38,.15);">{{ labels.TimeoutsLabel }}</h4>
+    <table class="WorkflowDesignerTable">
+      <tr>
+        <th>
+          <el-tooltip :content="labels.ExecutionTimeoutWarning" placement="top-start">
+            <div>
+              {{ labels.ExecutionTimeoutLabel }}<i class="el-icon-warning"
+                                                   style="display: contents; color: #FF3300; opacity: 0.6; margin-left: 3px;"></i>
+            </div>
+          </el-tooltip>
+        </th>
+        <th>{{ labels.TypeLabel }}</th>
+        <th v-if="FormData.ExecutionTimeout.Type == 'SetActivity'">{{ labels.ActivityLabel }}</th>
+        <th v-if="FormData.ExecutionTimeout.Type == 'SetState'">{{ labels.StateLabel }}</th>
+        <th v-if="FormData.ExecutionTimeout.Type == 'Retry'">{{ labels.RetryCountLabel }}</th>
+      </tr>
+      <tr>
+        <td :label="labels.ExecutionTimeoutLabel" :readonly="readonly">
+          <el-input v-model="FormData.ExecutionTimeout.Timer"
+                    :class="(FormData.ExecutionTimeout.Type ? validateField(notEmpty, FormData.ExecutionTimeout.Timer) : false) ? 'WorkflowDesignerInputError' : ''"
+                    :placeholder="labels.ExecutionTimeoutLabel"
+                    :readonly="readonly"
+                    :title="FormData.ExecutionTimeout.Type ? validateField(notEmpty, FormData.ExecutionTimeout.Timer):''"
+                    clearable></el-input>
+        </td>
+        <td>
+          <el-select
+            v-model="FormData.ExecutionTimeout.Type"
+            :class="(FormData.ExecutionTimeout.Timer ? validateField(notEmpty, FormData.ExecutionTimeout.Type) : false) ? 'WorkflowDesignerInputError' : ''"
+            :disabled="readonly"
+            :placeholder="labels.TypeLabel"
+            :title="FormData.ExecutionTimeout.Timer ? validateField(notEmpty, FormData.ExecutionTimeout.Type):''"
+            clearable
+            filterable
+            style="width: 100%;"
+            @change="delete  FormData.ExecutionTimeout.NameForSet">
+            <el-option key="SetActivity" :label="labels.SetActivityLabel" value="SetActivity"></el-option>
+            <el-option key="SetState" :label="labels.SetStateLabel" value="SetState"></el-option>
+            <el-option key="Retry" :label="labels.RetryLabel" value="Retry"></el-option>
+          </el-select>
+        </td>
+        <td v-if="FormData.ExecutionTimeout.Type == 'SetActivity'">
+          <el-select
+            v-model="FormData.ExecutionTimeout.NameForSet"
+            :class="validateField(notEmpty, FormData.ExecutionTimeout.NameForSet) ? 'WorkflowDesignerInputError' : ''"
+            :disabled="readonly"
+            :placeholder="labels.ActivityLabel"
+            :title="validateField(notEmpty, FormData.ExecutionTimeout.NameForSet)"
+            clearable
+            filterable
+            style="width: 100%;">
+            <el-option v-for="item in activities" :key="item" :label="item" :value="item"></el-option>
+          </el-select>
+        </td>
+        <td v-if="FormData.ExecutionTimeout.Type == 'SetState'">
+          <el-select
+            v-model="FormData.ExecutionTimeout.NameForSet"
+            :class="validateField(notEmpty, FormData.ExecutionTimeout.NameForSet) ? 'WorkflowDesignerInputError' : ''"
+            :disabled="readonly"
+            :placeholder="labels.StateLabel"
+            :title="validateField(notEmpty, FormData.ExecutionTimeout.NameForSet)"
+            clearable
+            filterable
+            style="width: 100%;">
+            <el-option v-for="item in states" :key="item" :label="item" :value="item"></el-option>
+          </el-select>
+        </td>
+        <td v-if="FormData.ExecutionTimeout.Type == 'Retry'">
+          <el-input-number
+            v-model="FormData.ExecutionTimeout.RetryCount"
+            :class="validateField(notEmpty, FormData.ExecutionTimeout.RetryCount) ? 'WorkflowDesignerInputError' : ''"
+            :placeholder="labels.RetryCountLabel"
+            :readonly="readonly"
+            :title="validateField(notEmpty, FormData.ExecutionTimeout.RetryCount)" clearable controls-position="right"
+            style="width: 100%;"></el-input-number>
+        </td>
+        <td v-if="!readonly" class="WorkflowDesignerTableEditButton">
+          <el-button class="WorkflowDesignerTableDeleteButton" @click="FormData.ExecutionTimeout = {RetryCount:'1'}"></el-button>
+        </td>
+      </tr>
+    </table>
+  </div>
+  <div v-if="expertMode" style="margin-bottom: 10px;">
+    <h4 class="WorkflowDesignerTitleWithCreate Underline">
+      {{ labels.ExceptionsHandling }}
+      <a v-if="!readonly" @click="addRow(FormData.ExceptionsHandlers)">{{ ButtonTextCreate }}</a>
+    </h4>
+    <table v-if="FormData?.ExceptionsHandlers?.length > 0" class="WorkflowDesignerTable">
+      <tr>
+        <th></th>
+        <th>{{ labels.Exceptions }}</th>
+        <th>{{ labels.TypeLabel }}</th>
+        <th>{{ labels.ImpAction }}</th>
+      </tr>
+      <tr v-for="(imp, index) in FormData.ExceptionsHandlers" :key="index"
+          :class="dragOverIndex == index && dragOverBlock  == imp ? 'dragOver' : ''"
+          @dragend="dragend($event)"
+          @dragover="dragover(imp, index, $event)"
+          @dragstart="dragstart(index, $event, FormData.ExceptionsHandlers)">
+        <td :draggable="!readonly" class='WorkflowDesignerTableMoveCol'>
+          <div v-if="!readonly" class='WorkflowDesignerTableMoveButton'></div>
+        </td>
+        <td>
+          <el-select
+            v-model="imp.Exceptions"
+            :class="validateField(notEmpty, imp.Exceptions) ? 'WorkflowDesignerInputError' : ''"
+            :disabled="readonly"
+            :placeholder="labels.Exceptions"
+            :title="validateField(notEmpty, imp.Exceptions)"
+            allow-create
+            clearable
+            filterable
+            multiple
+            style="width: 100%;">
+            <el-option key="AllExceptions" :label="labels.AllExceptions" value="*"></el-option>
+            <el-option v-for="item in imp.Exceptions" v-if="item !== '*'" :key="item" :label="item" :value="item"></el-option>
+          </el-select>
+        </td>
+        <td>
+          <el-select
+            v-model="imp.Type"
+            :class="validateField(notEmpty, imp.Type) ? 'WorkflowDesignerInputError' : ''"
+            :disabled="readonly"
+            :placeholder="labels.TypeLabel"
+            :title="validateField(notEmpty, imp.Type)"
+            clearable
+            filterable
+            style="width: 100%;"
+            @change="delete imp.NameForSet">
+            <el-option key="SetActivity" :label="labels.SetActivityLabel" value="SetActivity"></el-option>
+            <el-option key="SetState" :label="labels.SetStateLabel" value="SetState"></el-option>
+            <el-option key="Retry" :label="labels.RetryLabel" value="Retry"></el-option>
+            <el-option key="Ignore" :label="labels.IgnoreLabel" value="Ignore"></el-option>
+          </el-select>
+        </td>
+        <td v-if="imp.Type == 'SetActivity'"
+            :readonly="readonly">
+          <el-select
+            v-model="imp.NameForSet"
+            :class="validateField(notEmpty, imp.NameForSet) ? 'WorkflowDesignerInputError' : ''"
+            :disabled="readonly"
+            :placeholder="labels.ActivityLabel"
+            :title="validateField(notEmpty, imp.NameForSet)"
+            clearable
+            filterable
+            style="width: 100%;">
+            <el-option v-for="item in activities" :key="item" :label="item" :value="item"></el-option>
+          </el-select>
+        </td>
+        <td v-if="imp.Type == 'SetState'">
+          <el-select
+            v-model="imp.NameForSet"
+            :class="validateField(notEmpty, imp.NameForSet) ? 'WorkflowDesignerInputError' : ''"
+            :disabled="readonly"
+            :placeholder="labels.StateLabel"
+            :title="validateField(notEmpty, imp.NameForSet)"
+            clearable
+            filterable
+            style="width: 100%;">
+            <el-option v-for="item in states" :key="item" :label="item" :value="item"></el-option>
+          </el-select>
+        </td>
+        <td v-if="imp.Type == 'Retry'">
+          <el-input-number v-model="imp.RetryCount" :class="validateField(notEmpty, imp.RetryCount) ? 'WorkflowDesignerInputError' : ''"
+                           :placeholder="labels.RetryCountLabel"
+                           :readonly="readonly"
+                           :title="validateField(notEmpty, imp.RetryCount)"
+                           clearable
+                           controls-position="right" style="width: 100%;"></el-input-number>
+        </td>
+        <td v-if="imp.Type == 'Ignore' || !imp.Type">
+        </td>
+        <td v-if="!readonly" class="WorkflowDesignerTableEditButton">
+          <el-button class="WorkflowDesignerTableDeleteButton" @click="removeRow(FormData.ExceptionsHandlers, index)"></el-button>
+        </td>
+      </tr>
+    </table>
+  </div>
+  <div style="margin-bottom: 10px;">
+    <el-button icon="IconComment" v-if="!readonly && !itemHasComment" circle @click="showUserComment()"></el-button>
+    <h4 v-if="itemHasComment" style="padding-bottom: 1px;border-bottom: 1px solid rgba(34,36,38,.15);">{{ labels.UserComment }}</h4>
+    <el-input
+      v-if="itemHasComment"
+      v-model="FormData.UserComment"
+      :placeholder="labels.UserComment"
+      :rows="5"
+      type="textarea"
+    >
+    </el-input>
+  </div>
+</el-form>
+<div class="WorkflowDesignerButtons">
+  <el-button link @click="expertMode = !expertMode">{{ expertMode ? SwitchToDefaultMode : SwitchToExpertMode }}</el-button>
+  <el-button v-if="!readonly" type="primary" @click="onSave">{{ ButtonTextSave }}</el-button>
+  <el-button @click="onClose">{{ ButtonTextCancel }}</el-button>
+</div>
+<script type="application/javascript">
+  function customforms_bpmnplugin_servicetask_Data(me) {
+    return {
+      readonly: false,
+      expertMode: false,
+      actions: [],
+      activities: [],
+      states: [],
+      editItem: null,
+      itemHasComment: false,
+      FormData: {},
+      actionsStore: me.graph.data.CodeActions,
+      disableAllPersist: false,
+      isIndeterminate: false,
+      persists: [],
+      checkedPersists: []
+    }
+  }
+
+  function customforms_bpmnplugin_servicetask_Init(me) {
+    const {VueConfig} = me;
+    const {state: data, methods} = VueConfig;
+
+    methods.UpdateLanguage = function () {
+      Object.assign(data, {
+        labels: Object.assign(WorkflowDesignerConstants.ActivityFormLabel, WorkflowDesignerConstants.BpmnPlugin),
+        ButtonTextSave: WorkflowDesignerConstants.ButtonTextSave,
+        ButtonTextCancel: WorkflowDesignerConstants.ButtonTextCancel,
+        ButtonTextCreate: WorkflowDesignerConstants.ButtonTextCreate,
+        ButtonTextDelete: WorkflowDesignerConstants.ButtonTextDelete,
+        SwitchToDefaultMode: WorkflowDesignerConstants.SwitchToDefaultMode,
+        SwitchToExpertMode: WorkflowDesignerConstants.SwitchToExpertMode
+      });
+    }
+
+    methods.UpdateLanguage();
+
+    me.VueConfig.watch = {
+      actionsStore: function (val) {
+        data.actions = me.graph.getActionNames();
+      },
+    }
+
+    methods.onUpdate = function (item) {
+      var formData = data.FormData;
+      formData.Name = item.Name;
+      formData.ExecutionTimeout = item.ExecutionTimeout ? WorkflowDesignerCommon.clone(item.ExecutionTimeout) : {RetryCount: '1'};
+      formData.ExceptionsHandlers = Array.isArray(item.ExceptionsHandlers) ? WorkflowDesignerCommon.clone(item.ExceptionsHandlers) : [];
+      formData.IsInitial = item.IsInitial ? item.IsInitial : false;
+      formData.IsFinal = item.IsFinal ? item.IsFinal : false;
+      formData.IsForSetState = item.IsForSetState ? item.IsForSetState : false;
+      formData.IsAutoSchemeUpdate = item.IsAutoSchemeUpdate ? item.IsAutoSchemeUpdate : false;
+      formData.DisablePersistState = !!item.DisablePersistState;
+      formData.DisablePersistTransitionHistory = !!item.DisablePersistTransitionHistory;
+      formData.DisablePersistParameters = !!item.DisablePersistParameters;
+      formData.UserComment = item.UserComment;
+      formData.Implementation = Array.isArray(item.Implementation) ? WorkflowDesignerCommon.clone(item.Implementation) : [];
+
+      me.linkItem = item;
+      data.originalItem = WorkflowDesignerCommon.clone(formData);
+      data.readonly = me.graph.Settings.readonly;
+      data.actions = me.graph.getActionNames();
+      data.itemHasComment = formData.UserComment != null && formData.UserComment.length > 0;
+
+      const {activities, states} = data;
+      me.graph.data.Activities.forEach(({Name, State}) => {
+        if (item.Name === Name) return;
+
+        if (!activities.includes(Name)) activities.push(Name);
+        if (State && !states.includes(State)) states.push(State);
+      });
+
+      activities.sort();
+      states.sort();
+
+      data.disableAllPersist = formData.DisablePersistState && formData.DisablePersistTransitionHistory && formData.DisablePersistParameters;
+      data.isIndeterminate = formData.DisablePersistState || formData.DisablePersistTransitionHistory || formData.DisablePersistParameters;
+      data.persists = [
+        data.labels.DisablePersists.DisablePersistState,
+        data.labels.DisablePersists.DisablePersistParameters,
+        data.labels.DisablePersists.DisablePersistTransitionHistory
+      ];
+      data.checkedPersists = [];
+      if (formData.DisablePersistState !== undefined && formData.DisablePersistState) {
+        data.checkedPersists.push(data.labels.DisablePersists.DisablePersistState);
+      }
+      if (formData.DisablePersistParameters !== undefined && formData.DisablePersistParameters) {
+        data.checkedPersists.push(data.labels.DisablePersists.DisablePersistParameters);
+      }
+      if (formData.DisablePersistTransitionHistory !== undefined && formData.DisablePersistTransitionHistory) {
+        data.checkedPersists.push(data.labels.DisablePersists.DisablePersistTransitionHistory);
+      }
+
+      var objectCorrect = methods.objectCorrect;
+
+      if (objectCorrect(formData.ExecutionTimeout.Type)
+        || formData.ExceptionsHandlers.length > 0
+        || data.disableAllPersist
+        || data.isIndeterminate) {
+        data.expertMode = true;
+      }
+    };
+
+    methods.activityNameRules = function () {
+      var res = me.requiredRule();
+
+      var validator = function (rule, value, callback) {
+        var hasEqualNames = me.graph.data.Activities.find(function (a) {
+          return a != me.linkItem && a.Name == value;
+        });
+
+        hasEqualNames ? callback(new Error(rule.message)) : callback();
+      };
+      res.push({validator: validator, message: WorkflowDesignerConstants.FieldMustBeUnique});
+      return res;
+    }
+
+    methods.validateField = function (rules, value) {
+      var value = arguments[arguments.length - 1];
+
+      for (var i = 0; i < arguments.length - 1; i++) {
+        var error = arguments[i](value);
+        if (error)
+          return error;
+      }
+    };
+
+    methods.notEmpty = function (value) {
+      var isValid = true;
+      if (!methods.objectCorrect(value))
+        isValid = false;
+
+
+      if (Object.prototype.toString.call(value) === '[object Array]') {
+        if (value.length < 1)
+          isValid = false;
+      }
+
+      if (!isValid)
+        return WorkflowDesignerConstants.FieldIsRequired;
+    }
+
+    methods.handleCheckAllPersistsChange = function (val) {
+      data.checkedPersists = val ? data.persists : [];
+      data.isIndeterminate = false;
+    };
+
+    methods.handleCheckedPersistsChange = function (value) {
+      let checkedCount = value.length;
+      data.disableAllPersist = checkedCount === data.persists.length;
+      data.isIndeterminate = checkedCount > 0 && checkedCount < data.persists.length;
+    }
+
+    methods.setCurrentItem = function (item) {
+      this.currentItem = item;
+    };
+    methods.querySearch = function (queryString, cb) {
+      if (data.readonly)
+        return cb([]);
+
+      var res = me.graph.getAutoCompleteSuggestions2('actionparameter', this.currentItem.ActionName, queryString);
+      cb(res);
+    };
+
+    methods.validate = function () {
+      var validateFunc = methods.validateField;
+      var formData = data.FormData;
+      var notEmptyRule = methods.notEmpty;
+      for (var i = 0; i < formData.Implementation.length; i++) {
+        var item = formData.Implementation[i];
+        if (validateFunc(notEmptyRule, item.ActionName)) {
+          return false;
+        }
+      }
+
+      if (formData.ExecutionTimeout.Type) {
+        if (validateFunc(notEmptyRule, formData.ExecutionTimeout.Timer)) {
+          return false;
+        }
+      }
+      if (formData.ExecutionTimeout.Timer) {
+        if (validateFunc(notEmptyRule, formData.ExecutionTimeout.Type)) {
+          return false;
+        }
+      }
+
+      if (formData.ExecutionTimeout.Type === 'SetActivity' || formData.ExecutionTimeout.Type === 'SetState') {
+        if (validateFunc(notEmptyRule, formData.ExecutionTimeout.NameForSet)) {
+          return false;
+        }
+      }
+
+      if (formData.ExecutionTimeout.Type === 'Retry') {
+        if (validateFunc(notEmptyRule, formData.ExecutionTimeout.RetryCount)) {
+          return false;
+        }
+      }
+
+      for (var i = 0; i < formData.ExceptionsHandlers.length; i++) {
+        var item = formData.ExceptionsHandlers[i];
+        if (validateFunc(notEmptyRule, item.Exceptions) ||
+          validateFunc(notEmptyRule, item.Type)) {
+          return false;
+        }
+        if (item.Type === 'SetActivity' || item.Type === 'SetState') {
+          if (validateFunc(notEmptyRule, item.NameForSet)) {
+            return false;
+          }
+        }
+
+        if (item.Type === 'Retry') {
+          if (validateFunc(notEmptyRule, item.RetryCount)) {
+            return false;
+          }
+        }
+      }
+
+      return true;
+    };
+
+    methods.showUserComment = function () {
+      data.itemHasComment = true;
+    }
+
+    methods.addRow = function (items) {
+      items.push({});
+    };
+
+    methods.addActionRow = function (items) {
+      items.push({ActionParameter: ''});
+    };
+
+    methods.removeRow = function (items, index) {
+      items.splice(index, 1);
+    };
+
+    methods.showjson = function (name, item) {
+      data.editItem = item;
+      me.editItem = item;
+
+      var onSuccess = function (value) {
+        if (me.editItem) {
+          me.editItem[name] = value;
+          data.editItem = undefined;
+          delete me.editItem;
+        }
+      };
+
+      var onClose = function (value) {
+        data.editItem = undefined;
+      };
+
+      var params = {
+        name: item['ActionName'],
+        type: ['Action']
+      };
+      data.jsonform = me.showjson(item[name], params, onSuccess, onClose);
+    };
+
+    methods.onSave = function () {
+      data.FormData.DisablePersistState = false;
+      data.FormData.DisablePersistParameters = false;
+      data.FormData.DisablePersistTransitionHistory = false;
+
+      const persists = data.checkedPersists;
+      for (var i = 0; i < persists.length; i++) {
+        switch (persists[i]) {
+          case  data.labels.DisablePersists.DisablePersistState:
+            data.FormData.DisablePersistState = true;
+            break;
+          case data.labels.DisablePersists.DisablePersistParameters:
+            data.FormData.DisablePersistParameters = true;
+            break;
+          case data.labels.DisablePersists.DisablePersistTransitionHistory:
+            data.FormData.DisablePersistTransitionHistory = true;
+            break;
+        }
+      }
+
+      if (this.$refs) {
+        WorkflowDesignerCommon.validateForms(this.$refs).then(isValid => {
+        WorkflowDesignerCommon.validateForms(this.$refs).then(isValid => {
+          if (isValid && methods.validate()) {
+            me.onSuccess(data.FormData);
+            me.onClose(true);
+          }
+        }).catch(() => { }) // Validation failed
+      })}
+    };
+
+    methods.onClose = function () {
+      if (data.readonly) {
+        me.onClose(true);
+        return;
+      }
+
+      var originalItem = data.originalItem;
+      var item = data.FormData;
+
+      if (WorkflowDesignerCommon.deepCompare(originalItem, item)) {
+        me.onClose(true);
+      } else {
+        me.showConfirm();
+        return false;
+      }
+    };
+
+    methods.onCloseSave = function () {
+      me.onClose(true);
+    };
+
+    me.showConfirm = function () {
+      methods.showConfirm({
+        title: WorkflowDesignerConstants.DialogConfirmText,
+        message: WorkflowDesignerConstants.CloseWithoutSaving,
+        onSuccess: function () {
+          methods.onCloseSave();
+        }
+      });
+    }
+  }
+</script>

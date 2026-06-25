@@ -1,10 +1,7 @@
 @echo OFF
 
-docker compose build
+docker compose up --build dwkit_starterpack
 IF ERRORLEVEL 9009 goto :NO_DOCKER
-
-docker compose run --rm start_db
-docker compose up dwkit_starterpack
 
 pause
 

@@ -6,6 +6,4 @@ if ! type docker > /dev/null; then
   exit 127
 fi
 
-docker compose build
-docker compose run --rm start_db
-docker compose up dwkit_starterpack
+docker compose up --build dwkit_starterpack

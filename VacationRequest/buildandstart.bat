@@ -38,5 +38,5 @@ start.bat
 exit
 
 :NO_SDK_ERROR
-echo .NET Core not found. Please install .NET SDK 8.0 to run this application
-echo For more information visit https://dotnet.microsoft.com/en-us/download/dotnet/8.0
+echo .NET Core not found. Please install .NET SDK 10.0 to run this application
+echo For more information visit https://dotnet.microsoft.com/en-us/download/dotnet/10.0

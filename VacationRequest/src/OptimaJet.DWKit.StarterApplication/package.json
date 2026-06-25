@@ -1,6 +1,6 @@
 {
     "name": "optimajet-dwkit",
-    "version": "4.0.1",
+    "version": "5.0.0",
     "description": "OptimaJet DWKit StarterApplication",
     "scripts": {
         "dist": "cross-env NODE_OPTIONS=--openssl-legacy-provider webpack --env.prod",
@@ -37,7 +37,7 @@
         "react-data-grid": "4.0.9",
         "react-data-grid-addons": "4.0.8",
         "react-datepicker": "1.6.0",
-        "react-dom": "16.8.3",
+        "react-dom": "16.13.1",
         "react-dropzone-component": "3.2.0",
         "react-fast-compare": "3.0.2",
         "react-grid-layout": "0.16.6",

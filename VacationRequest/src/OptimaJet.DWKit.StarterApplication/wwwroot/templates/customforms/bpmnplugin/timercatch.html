@@ -1,0 +1,281 @@
+<h3>{{ labels.TimerCatchEvent }}</h3>
+<el-form ref="form"
+         :model="FormData"
+         class="WorkflowDesignerWindowForm"
+         label-position="top"
+         label-width="150px">
+  <div class="SettingsWithPadding">
+    <div class="el-form--inline el-form--label-top">
+      <el-form-item :label="labels.Name" :rules="activityNameRules()" class="el-form-item" prop="Name" style="flex-grow: 1;">
+        <el-input v-model="FormData.Name" :placeholder="labels.Name" :readonly="readonly" @input="nameOnChange"></el-input>
+      </el-form-item>
+      <el-form-item :label="labels.State" class="el-form-item" prop="State" style="flex-grow: 1;">
+        <el-input v-model="FormData.State" :placeholder="labels.State" :readonly="readonly"></el-input>
+      </el-form-item>
+    </div>
+    <el-form-item size="small">
+      <el-checkbox v-model="FormData.IsForSetState" :disabled="readonly" :value="labels.IsForSetState" name="type">{{labels.IsForSetState}}</el-checkbox>
+      <el-checkbox v-model="FormData.IsAutoSchemeUpdate" :disabled="readonly" :value="labels.IsAutoSchemeUpdate" name="type">{{labels.IsAutoSchemeUpdate}}</el-checkbox>
+    </el-form-item>
+    <el-form-item size="small">
+      <el-checkbox v-if="expertMode" v-model="disableAllPersist" :disabled="readonly" :indeterminate="isIndeterminate"
+                   :label="labels.DisablePersist" @change="handleCheckAllPersistsChange"></el-checkbox>
+    </el-form-item>
+    <el-checkbox-group v-if="expertMode && (disableAllPersist || isIndeterminate)" v-model="checkedPersists"
+                       @change="handleCheckedPersistsChange">
+      <el-checkbox v-for="persist in persists" :key="persist" :disabled="readonly" :label="persist" :value="persist">{{ persist }}</el-checkbox>
+    </el-checkbox-group>
+  </div>
+  <el-form-item :label="labels.TriggerTimer" :rules="requiredRule()" prop="__timerName">
+    <el-select
+      v-model="FormData.__timerName"
+      :disabled="readonly"
+      allow-create
+      clearable
+      filterable
+      placeholder=""
+      style="width: 100%; margin-right: 10px;">
+      <el-option v-for="item in timers" :key="item" :label="item" :value="item"></el-option>
+    </el-select>
+  </el-form-item>
+  <div style="margin-bottom: 10px;">
+    <el-button icon="IconComment" v-if="!readonly && !itemHasComment" circle @click="showUserComment()"></el-button>
+    <h4 v-if="itemHasComment" style="padding-bottom: 1px;border-bottom: 1px solid rgba(34,36,38,.15);">{{ labels.UserComment }}</h4>
+    <el-input
+      v-if="itemHasComment"
+      v-model="FormData.UserComment"
+      :placeholder="labels.UserComment"
+      :rows="5"
+      type="textarea"
+    >
+    </el-input>
+  </div>
+</el-form>
+<div class="WorkflowDesignerButtons">
+  <el-button link @click="expertMode = !expertMode">{{ expertMode ? SwitchToDefaultMode : SwitchToExpertMode }}</el-button>
+  <el-button v-if="!readonly" type="primary" @click="onSave">{{ ButtonTextSave }}</el-button>
+  <el-button @click="onClose">{{ ButtonTextCancel }}</el-button>
+</div>
+<script type="application/javascript">
+  function customforms_bpmnplugin_timercatch_Data(me) {
+    return {
+      readonly: false,
+      expertMode: false,
+      activities: [],
+      states: [],
+      itemHasComment: false,
+      FormData: {},
+      disableAllPersist: false,
+      isIndeterminate: false,
+      persists: [],
+      checkedPersists: [],
+      timers: [],
+      timersStore: me.graph.data.Timers
+    }
+  }
+
+  function customforms_bpmnplugin_timercatch_Init(me) {
+    const {VueConfig} = me;
+    const {state: data, methods} = VueConfig;
+
+    methods.UpdateLanguage = function () {
+      Object.assign(data, {
+        labels: Object.assign({},
+          WorkflowDesignerConstants.ActivityFormLabel,
+          WorkflowDesignerConstants.BpmnPlugin,
+          {TriggerTimer: WorkflowDesignerConstants.TransitionFormLabel.TriggerTimer}),
+        ButtonTextSave: WorkflowDesignerConstants.ButtonTextSave,
+        ButtonTextCancel: WorkflowDesignerConstants.ButtonTextCancel,
+        ButtonTextCreate: WorkflowDesignerConstants.ButtonTextCreate,
+        ButtonTextDelete: WorkflowDesignerConstants.ButtonTextDelete,
+        SwitchToDefaultMode: WorkflowDesignerConstants.SwitchToDefaultMode,
+        SwitchToExpertMode: WorkflowDesignerConstants.SwitchToExpertMode
+      });
+    }
+
+    methods.UpdateLanguage();
+
+    me.VueConfig.watch = {
+      timersStore: function (val) {
+        data.timers = me.graph.getTimerNames();
+      },
+    };
+
+    methods.onUpdate = function (item) {
+      const formData = data.FormData;
+      formData.Name = item.Name;
+      formData.State = item.State;
+      formData.IsForSetState = item.IsForSetState;
+      formData.IsAutoSchemeUpdate = item.IsAutoSchemeUpdate;
+      formData.DisablePersistState = !!item.DisablePersistState;
+      formData.DisablePersistTransitionHistory = !!item.DisablePersistTransitionHistory;
+      formData.DisablePersistParameters = !!item.DisablePersistParameters;
+      formData.UserComment = item.UserComment;
+
+      me.linkItem = item;
+      data.originalItem = WorkflowDesignerCommon.clone(formData);
+      data.readonly = me.graph.Settings.readonly;
+      data.itemHasComment = formData.UserComment != null && formData.UserComment.length > 0;
+
+      const {activities, states} = data;
+      me.graph.data.Activities.forEach(({Name, State}) => {
+        if (item.Name === Name) return;
+
+        if (!activities.includes(Name)) activities.push(Name);
+        if (State && !states.includes(State)) states.push(State);
+      });
+
+      activities.sort();
+      states.sort();
+
+      data.disableAllPersist = formData.DisablePersistState && formData.DisablePersistTransitionHistory && formData.DisablePersistParameters;
+      data.isIndeterminate = formData.DisablePersistState || formData.DisablePersistTransitionHistory || formData.DisablePersistParameters;
+      data.persists = [
+        data.labels.DisablePersists.DisablePersistState,
+        data.labels.DisablePersists.DisablePersistParameters,
+        data.labels.DisablePersists.DisablePersistTransitionHistory
+      ];
+      data.checkedPersists = [];
+      if (formData.DisablePersistState !== undefined && formData.DisablePersistState) {
+        data.checkedPersists.push(data.labels.DisablePersists.DisablePersistState);
+      }
+      if (formData.DisablePersistParameters !== undefined && formData.DisablePersistParameters) {
+        data.checkedPersists.push(data.labels.DisablePersists.DisablePersistParameters);
+      }
+      if (formData.DisablePersistTransitionHistory !== undefined && formData.DisablePersistTransitionHistory) {
+        data.checkedPersists.push(data.labels.DisablePersists.DisablePersistTransitionHistory);
+      }
+
+      if (data.disableAllPersist || data.isIndeterminate) {
+        data.expertMode = true;
+      }
+
+      data.prevName = item.Name;
+
+      data.timers = me.graph.getTimerNames();
+
+      const timerName = item.Annotations.find(a => a.Name === '__timerName');
+      formData.__timerName = timerName?.JsonValue ?? null;
+      data.originalItem.__timerName = formData.__timerName;
+    };
+
+    methods.activityNameRules = function () {
+      var res = me.requiredRule();
+
+      var validator = function (rule, value, callback) {
+        var hasEqualNames = me.graph.data.Activities.find(function (a) {
+          return a !== me.linkItem && a.Name === value;
+        });
+
+        hasEqualNames ? callback(new Error(rule.message)) : callback();
+      };
+      res.push({validator: validator, message: WorkflowDesignerConstants.FieldMustBeUnique});
+      return res;
+    }
+
+    methods.handleCheckAllPersistsChange = function (val) {
+      data.checkedPersists = val ? data.persists : [];
+      data.isIndeterminate = false;
+    };
+
+    methods.handleCheckedPersistsChange = function (value) {
+      let checkedCount = value.length;
+      data.disableAllPersist = checkedCount === data.persists.length;
+      data.isIndeterminate = checkedCount > 0 && checkedCount < data.persists.length;
+    }
+
+    methods.showUserComment = function () {
+      data.itemHasComment = true;
+    }
+
+    methods.onSave = function () {
+      data.FormData.DisablePersistState = false;
+      data.FormData.DisablePersistParameters = false;
+      data.FormData.DisablePersistTransitionHistory = false;
+
+      const persists = data.checkedPersists;
+      for (var i = 0; i < persists.length; i++) {
+        switch (persists[i]) {
+          case  data.labels.DisablePersists.DisablePersistState:
+            data.FormData.DisablePersistState = true;
+            break;
+          case data.labels.DisablePersists.DisablePersistParameters:
+            data.FormData.DisablePersistParameters = true;
+            break;
+          case data.labels.DisablePersists.DisablePersistTransitionHistory:
+            data.FormData.DisablePersistTransitionHistory = true;
+            break;
+        }
+      }
+
+      const timerItem = me.getTimerItem(data.FormData.__timerName);
+      if (!!timerItem) me.updateAllOutgoingTransitions(timerItem);
+
+      if (this.$refs) {
+        WorkflowDesignerCommon.validateForms(this.$refs).then(isValid => {
+          if (isValid) {
+            me.onSuccess(data.FormData);
+            me.onClose(true);
+          }
+        }).catch(() => { }) // Validation failed
+      }
+    };
+
+    methods.nameOnChange = function (value) {
+      const formData = data.FormData;
+      if (formData.State === data.prevName) {
+        formData.State = value;
+      }
+      data.prevName = value;
+    };
+
+    me.updateAllOutgoingTransitions = function (timerItem) {
+      let outgoingTransitions = me.graph.data.Transitions.filter(function (transition) {
+        return transition.From.Name === data.FormData.Name;
+      });
+      for (let i = 0; i < outgoingTransitions.length; i++) {
+        let transition = outgoingTransitions[i];
+        transition.Conditions = [{Type: 'Always', Action: {}}];
+        transition.Trigger.Timer = timerItem;
+        transition.Trigger.Type = 'Timer';
+      }
+    }
+
+    me.getTimerItem = function (timerName) {
+      return me.graph.data.Timers.find(function (timer) {
+        return timer.Name === timerName;
+      });
+    }
+
+    methods.onClose = function () {
+      if (data.readonly) {
+        me.onClose(true);
+        return;
+      }
+
+      var originalItem = data.originalItem;
+      var item = data.FormData;
+
+      if (WorkflowDesignerCommon.deepCompare(originalItem, item)) {
+        me.onClose(true);
+      } else {
+        me.showConfirm();
+        return false;
+      }
+    };
+
+    methods.onCloseSave = function () {
+      me.onClose(true);
+    };
+
+    me.showConfirm = function () {
+      methods.showConfirm({
+        title: WorkflowDesignerConstants.DialogConfirmText,
+        message: WorkflowDesignerConstants.CloseWithoutSaving,
+        onSuccess: function () {
+          methods.onCloseSave();
+        }
+      });
+    }
+  }
+</script>

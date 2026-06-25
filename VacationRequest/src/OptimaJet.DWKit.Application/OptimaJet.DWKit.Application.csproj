@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <Version>4.0.1</Version>
+    <TargetFramework>net10.0</TargetFramework>
+    <Version>5.0.0</Version>
     <Authors>Optimajet Limited</Authors>
     <Company>Optimajet Limited</Company>
     <PackageLicenseUrl>https://dwkit.com/agreements/eula/</PackageLicenseUrl>
@@ -9,9 +9,9 @@
     <PackageIconUrl>https://dwkit.com/img/fav/favicon-194x194.png</PackageIconUrl>
     <RepositoryUrl>https://github.com/optimajet/DWKit</RepositoryUrl>
     <Description>The sample for DWKit</Description>
-    <Copyright>OptimaJet DWKit 2025</Copyright>
-    <AssemblyVersion>4.0.1</AssemblyVersion>
-    <FileVersion>4.0.1</FileVersion>
+    <Copyright>OptimaJet DWKit 2026</Copyright>
+    <AssemblyVersion>5.0.0</AssemblyVersion>
+    <FileVersion>5.0.0</FileVersion>
     <LangVersion>default</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -21,23 +21,23 @@
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="DWKit-Core" Version="4.0.1" />
-    <PackageReference Include="DWKit-ProviderForMSSQL" Version="4.0.1" />
-    <PackageReference Include="DWKit-ProviderForOracle" Version="4.0.1" />
-    <PackageReference Include="DWKit-ProviderForPostgreSQL" Version="4.0.1" />
-    <PackageReference Include="DWKit-Security" Version="4.0.1" />
+    <PackageReference Include="DWKit-Core" Version="5.0.0" />
+    <PackageReference Include="DWKit-ProviderForMSSQL" Version="5.0.0" />
+    <PackageReference Include="DWKit-ProviderForOracle" Version="5.0.0" />
+    <PackageReference Include="DWKit-ProviderForPostgreSQL" Version="5.0.0" />
+    <PackageReference Include="DWKit-Security" Version="5.0.0" />
     <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.1.1" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="8.0.0" />
-    <PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.NewtonsoftJson" Version="8.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="10.0.8" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.NewtonsoftJson" Version="10.0.8" />
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.8" />
     <PackageReference Include="Microsoft.VisualStudio.Web.BrowserLink" Version="2.2.0" />
-    <PackageReference Include="WorkflowEngine.NETCore-Core" Version="9.0.0" />
-    <PackageReference Include="WorkflowEngine.NETCore-FilesPlugin" Version="9.0.0" />
-    <PackageReference Include="WorkflowEngine.NETCore-ProviderForMSSQL" Version="9.0.0" />
-    <PackageReference Include="WorkflowEngine.NETCore-ProviderForPostgreSQL" Version="9.0.0" />
-    <PackageReference Include="WorkflowEngine.NETCore-ProviderForOracle" Version="9.0.0" />
+    <PackageReference Include="WorkflowEngine.NETCore-Core" Version="21.1.1" />
+    <PackageReference Include="WorkflowEngine.NETCore-FilesPlugin" Version="21.1.1" />
+    <PackageReference Include="WorkflowEngine.NETCore-ProviderForMSSQL" Version="21.1.1" />
+    <PackageReference Include="WorkflowEngine.NETCore-ProviderForPostgreSQL" Version="21.1.1" />
+    <PackageReference Include="WorkflowEngine.NETCore-ProviderForOracle" Version="21.1.1" />
   </ItemGroup>
 </Project>

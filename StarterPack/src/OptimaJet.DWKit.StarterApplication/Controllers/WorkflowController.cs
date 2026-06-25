@@ -305,7 +305,12 @@ namespace OptimaJet.DWKit.StarterApplication.Controllers
                     }
                 }
 
-                await WorkflowInit.Runtime.SetStateAsync(processId, DWKitRuntime.Security.CurrentUser?.Id.ToString(), userId.ToString(), state, parameters);
+                await WorkflowInit.Runtime.SetStateAsync(new SetStateParams(processId, state)
+                {
+                    IdentityId = DWKitRuntime.Security.CurrentUser?.Id.ToString(),
+                    ImpersonatedIdentityId = userId.ToString(),
+                    ProcessParameters = parameters
+                });
 
                 return Json(new SuccessResponse());
             }

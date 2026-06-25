@@ -183,7 +183,7 @@ namespace OptimaJet.DWKit.Application
 
             try
             {
-                using (new System.Data.SqlClient.SqlConnection(DWKitRuntime.ConnectionStringData))
+                using (new Microsoft.Data.SqlClient.SqlConnection(DWKitRuntime.ConnectionStringData))
                 { }
 
                 provider = new SQLServerProvider();

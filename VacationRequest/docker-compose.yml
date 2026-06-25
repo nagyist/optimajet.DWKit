@@ -2,26 +2,25 @@ version: '3.4'
 
 services:
   db:
-     image: postgres:alpine
+     image: postgres:17-alpine
      environment:
        POSTGRES_DB: dwkit
        POSTGRES_USER: dbuser
        POSTGRES_PASSWORD: dbuserpassword
      volumes:
        - dbdata:/var/lib/postgresql/data
+     healthcheck:
+       test: ["CMD-SHELL", "pg_isready -U dbuser -d dwkit"]
+       interval: 5s
+       timeout: 5s
+       retries: 30
      restart: always
      ports:
        - "5432"
-  start_db:
-    image: jbergknoff/postgresql-client
-    depends_on:
-       - db
-    volumes:
-       - ./docker-files:/home/.docker
-    entrypoint: /home/.docker/wait-for-postgres.sh db dbuser dbuserpassword dwkit
   dwkit_starterpack:
     depends_on:
-       - db
+       db:
+         condition: service_healthy
     ports:
        - "48800:48800"
     build: .

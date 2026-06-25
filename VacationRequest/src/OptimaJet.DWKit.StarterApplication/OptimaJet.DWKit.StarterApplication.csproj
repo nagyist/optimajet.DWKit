@@ -2,7 +2,7 @@
   <PropertyGroup>
     <PreBuildEvent>
     </PreBuildEvent>
-    <Version>4.0.1</Version>
+    <Version>5.0.0</Version>
     <Authors>Optimajet Limited</Authors>
     <Company>Optimajet Limited</Company>
     <Description>The sample for DWKit</Description>
@@ -10,24 +10,24 @@
     <PackageProjectUrl>https://dwkit.com/</PackageProjectUrl>
     <PackageIconUrl>https://dwkit.com/img/fav/favicon-194x194.png</PackageIconUrl>
     <RepositoryUrl>https://github.com/optimajet/DWKit</RepositoryUrl>
-    <Copyright>OptimaJet DWKit 2025</Copyright>
+    <Copyright>OptimaJet DWKit 2026</Copyright>
     <LangVersion>default</LangVersion>
   </PropertyGroup>
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="BundlerMinifier.Core" Version="2.6.362" />
     <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.1.1" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="8.0.0" />
-    <PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.NewtonsoftJson" Version="8.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="10.0.8" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.NewtonsoftJson" Version="10.0.8" />
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.8" />
     <PackageReference Include="Microsoft.VisualStudio.Web.BrowserLink" Version="2.2.0" />
-    <PackageReference Include="WorkflowEngine.NETCore-Core" Version="9.0.0" />
-    <PackageReference Include="WorkflowEngine.NETCore-ProviderForMSSQL" Version="9.0.0" />
-    <PackageReference Include="WorkflowEngine.NETCore-ProviderForPostgreSQL" Version="9.0.0" />
+    <PackageReference Include="WorkflowEngine.NETCore-Core" Version="21.1.1" />
+    <PackageReference Include="WorkflowEngine.NETCore-ProviderForMSSQL" Version="21.1.1" />
+    <PackageReference Include="WorkflowEngine.NETCore-ProviderForPostgreSQL" Version="21.1.1" />
   </ItemGroup>
   <ItemGroup>
     <DotNetCliToolReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Tools" Version="1.0.0" />

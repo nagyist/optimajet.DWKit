@@ -36,7 +36,7 @@ To access the application, use the following default access parameters:
 
 MS SQL Server example:
 
-`ConnectionString=Data Source=(local);Initial Catalog=dwkit;Integrated Security=False;User ID=sa;Password=1`
+`ConnectionString=Data Source=(local);Initial Catalog=dwkit;Integrated Security=False;TrustServerCertificate=True;User ID=sa;Password=1`
 
 PostgreSQL example:
 
